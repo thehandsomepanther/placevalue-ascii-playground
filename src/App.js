@@ -41,6 +41,12 @@ class App extends Component {
     });
   };
 
+  handleChange = (field, value) => {
+    this.setState({
+      [field]: value
+    });
+  };
+
   handleResize = () => {
     this.forceUpdate();
   };
@@ -51,7 +57,8 @@ class App extends Component {
     return (
       <div
         style={{
-          overflow: "hidden"
+          overflow: "hidden",
+          position: "relative"
         }}
       >
         {!textHeight && (
@@ -72,6 +79,29 @@ class App extends Component {
             {placevalue(fn, this.height, this.width, place, yOffset)}
           </pre>
         )}
+        <div
+          style={{
+            top: "20px",
+            left: "20px",
+            position: "absolute",
+            padding: "20px",
+            borderRadius: "4px",
+            backgroundColor: "#fafbfc",
+            border: "1px solid #e9eaeb"
+          }}
+        >
+          <div>
+            <p className="input-title">Parameters</p>
+          </div>
+          <div className="input-group">
+            <label className="input-label">Place</label>
+            <input
+              type="text"
+              value={place}
+              onChange={e => this.handleChange("place", e.target.value)}
+            />
+          </div>
+        </div>
       </div>
     );
   }
