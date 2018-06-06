@@ -13,7 +13,7 @@ class App extends Component {
     super(props);
     this.state = {
       fn: (x, y) => x * x * y * y,
-      place: 6,
+      place: 7,
       yOffset: 0,
       textWidth: null,
       textHeight: null
