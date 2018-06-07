@@ -1,12 +1,31 @@
 import React, { Component } from "react";
+import styled from "react-emotion";
 const placevalue = require("placevalue-ascii");
 
-const styles = {
-  fontSize: "16px",
-  lineHeight: "6px",
-  fontFamily: "monospace",
-  letterSpacing: "-3px"
-};
+const Container = styled("div")`
+  overflow: hidden;
+  position: relative;
+`;
+
+const Text = styled("pre")`
+  font-size: 16px;
+  line-height: 6px;
+  font-family: monospace;
+  letter-spacing: -3px;
+  display: inline-block;
+`;
+
+const ControlsContainer = styled("div")`
+  top: 20px;
+  left: 20px;
+  position: absolute;
+  padding: 20px;
+  border-radius: 4px;
+  background-color: #fafbfc;
+  border: 1px solid #e9eaeb;
+`;
+
+const INTERVAL_MS = 100;
 
 class App extends Component {
   constructor(props) {
@@ -16,7 +35,9 @@ class App extends Component {
       place: 7,
       yOffset: 0,
       textWidth: null,
-      textHeight: null
+      textHeight: null,
+      maxPlace: 20,
+      isPlaying: false
     };
   }
 
@@ -47,24 +68,57 @@ class App extends Component {
     });
   };
 
+  handlePlayToggle = () => {
+    const { isPlaying } = this.state;
+    const newIsPlaying = !isPlaying;
+
+    if (newIsPlaying) {
+      this.makeInterval();
+    } else {
+      this.clearInterval();
+    }
+
+    this.setState({
+      isPlaying: newIsPlaying
+    });
+  };
+
   handleResize = () => {
     this.forceUpdate();
   };
 
+  makeInterval = () => {
+    this.interval = setInterval(() => {
+      const { isPlaying, place, maxPlace } = this.state;
+      if (isPlaying) {
+        this.setState({
+          place: (place + 1) % maxPlace
+        });
+      }
+    }, INTERVAL_MS);
+  };
+
+  clearInterval = () => {
+    clearInterval(this.interval);
+    this.interval = null;
+  };
+
   render() {
-    const { fn, place, yOffset, textHeight, textWidth } = this.state;
+    const {
+      fn,
+      place,
+      yOffset,
+      textHeight,
+      textWidth,
+      maxPlace,
+      isPlaying
+    } = this.state;
 
     return (
-      <div
-        style={{
-          overflow: "hidden",
-          position: "relative"
-        }}
-      >
+      <Container>
         {!textHeight && (
-          <pre
-            style={{ ...styles, display: "inline-block" }}
-            ref={el => {
+          <Text
+            innerRef={el => {
               if (el) {
                 const { width, height } = el.getBoundingClientRect();
                 this.setTextSize(width, height);
@@ -72,37 +126,41 @@ class App extends Component {
             }}
           >
             *
-          </pre>
+          </Text>
         )}
         {textHeight && (
-          <pre style={styles}>
-            {placevalue(fn, this.height, this.width, place, yOffset)}
-          </pre>
+          <Text>{placevalue(fn, this.height, this.width, place, yOffset)}</Text>
         )}
-        <div
-          style={{
-            top: "20px",
-            left: "20px",
-            position: "absolute",
-            padding: "20px",
-            borderRadius: "4px",
-            backgroundColor: "#fafbfc",
-            border: "1px solid #e9eaeb"
-          }}
-        >
+        <ControlsContainer>
           <div>
             <p className="input-title">Parameters</p>
           </div>
-          <div className="input-group">
-            <label className="input-label">Place</label>
+          <div>
+            <label>Place</label>
             <input
               type="text"
               value={place}
               onChange={e => this.handleChange("place", e.target.value)}
             />
           </div>
-        </div>
-      </div>
+          <div>
+            <label>Max Place</label>
+            <input
+              type="text"
+              value={maxPlace}
+              onChange={e => this.handleChange("maxPlace", e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Play</label>
+            <input
+              type="button"
+              value={isPlaying ? "Pause" : "Play"}
+              onClick={this.handlePlayToggle}
+            />
+          </div>
+        </ControlsContainer>
+      </Container>
     );
   }
 }
