@@ -38,7 +38,8 @@ class App extends Component {
       textHeight: null,
       maxPlace: 20,
       isPlaying: false,
-      placevalueString: ""
+      placevalueString: "",
+      didFnError: false
     };
   }
 
@@ -111,7 +112,7 @@ class App extends Component {
       const { isPlaying, place, maxPlace } = this.state;
       if (isPlaying) {
         this.setState({
-          place: (place + 1) % maxPlace
+          place: ((place + 1) % (maxPlace - 1)) + 1
         });
       }
     }, INTERVAL_MS);
@@ -136,13 +137,8 @@ class App extends Component {
       `(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},${place},${yOffset})`
     ]);
 
-    console.log(
-      `(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},${place},${yOffset})`
-    );
-
     worker.onmessage = e => {
       clearTimeout(timeout);
-      console.log(e);
       this.setState({
         placevalueString: e.data
       });
@@ -150,6 +146,7 @@ class App extends Component {
 
     worker.onerror = e => {
       clearTimeout(timeout);
+      this.setState({ didFnError: true });
     };
   };
 
