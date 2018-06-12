@@ -4,7 +4,6 @@ const placevalue = require("placevalue-ascii");
 
 const Container = styled("div")`
   overflow: hidden;
-  position: relative;
 `;
 
 const Text = styled("pre")`
@@ -38,19 +37,10 @@ class App extends Component {
       textHeight: null,
       maxPlace: 20,
       isPlaying: false,
-      placevalueString: "",
-      didFnError: false
+      placevalueStrings: null,
+      didFnError: false,
+      shouldRecalcPlacevalueStrings: false
     };
-  }
-
-  get height() {
-    const { textHeight } = this.state;
-    return Math.floor(window.innerHeight / textHeight);
-  }
-
-  get width() {
-    const { textWidth } = this.state;
-    return Math.floor(window.innerWidth / textWidth);
   }
 
   componentDidMount() {
@@ -58,33 +48,28 @@ class App extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { fn, textWidth, textHeight, place, yOffset } = this.state;
-    const attributes = ["fn", "place", "yOffset", "textWidth", "textHeight"];
+    const { shouldRecalcPlacevalueStrings } = this.state;
 
-    let shouldRecalcPlacevalueString = false;
-    for (let i = 0; i < attributes.length; i++) {
-      const attribute = attributes[i];
-      if (prevState[attribute] !== this.state[attribute]) {
-        shouldRecalcPlacevalueString = true;
-        break;
-      }
-    }
-
-    if (shouldRecalcPlacevalueString) {
-      this.recalcPlacevalueString(fn, textWidth, textHeight, place, yOffset);
+    if (shouldRecalcPlacevalueStrings) {
+      this.recalcPlacevalueStrings();
+      this.setState({
+        shouldRecalcPlacevalueStrings: false
+      });
     }
   }
 
   setTextSize = (width, height) => {
     this.setState({
       textWidth: width,
-      textHeight: height
+      textHeight: height,
+      shouldRecalcPlacevalueStrings: true
     });
   };
 
   handleChange = (field, value) => {
     this.setState({
-      [field]: value
+      [field]: value,
+      shouldRecalcPlacevalueStrings: true
     });
   };
 
@@ -123,7 +108,8 @@ class App extends Component {
     this.interval = null;
   };
 
-  recalcPlacevalueString = (fn, textWidth, textHeight, place, yOffset) => {
+  recalcPlacevalueStrings = () => {
+    const { fn, textWidth, textHeight, place, yOffset, maxPlace } = this.state;
     let worker = new Worker("worker.js");
 
     const timeout = setTimeout(() => {
@@ -133,14 +119,21 @@ class App extends Component {
       }
     }, 2000);
 
+    const places = [];
+    for (let i = 0; i < maxPlace; i++) {
+      places.push(i + 1);
+    }
+
     worker.postMessage([
-      `(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},${place},${yOffset})`
+      `${JSON.stringify(
+        places
+      )}.map(p=>(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},p,${yOffset}))`
     ]);
 
     worker.onmessage = e => {
       clearTimeout(timeout);
       this.setState({
-        placevalueString: e.data
+        placevalueStrings: [...e.data]
       });
     };
 
@@ -159,7 +152,7 @@ class App extends Component {
       textWidth,
       maxPlace,
       isPlaying,
-      placevalueString
+      placevalueStrings
     } = this.state;
 
     return (
@@ -173,14 +166,13 @@ class App extends Component {
                   Math.floor(window.innerWidth / width),
                   Math.floor(window.innerHeight / height)
                 );
-                this.recalcPlacevalueString(fn, width, height, place, yOffset);
               }
             }}
           >
             *
           </Text>
         )}
-        {textHeight && <Text>{placevalueString}</Text>}
+        {placevalueStrings && <Text>{placevalueStrings[place] || ""}</Text>}
         <ControlsContainer>
           <div>
             <p className="input-title">Parameters</p>
