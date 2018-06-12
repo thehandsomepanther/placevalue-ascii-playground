@@ -35,7 +35,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      fn: "x + y",
+      fn: Math.floor(Math.random() * fns.length),
       place: 7,
       yOffset: 0,
       textWidth: null,
