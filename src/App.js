@@ -31,13 +31,14 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      fn: (x, y) => x * x * y * y,
+      fn: "x + y",
       place: 7,
       yOffset: 0,
       textWidth: null,
       textHeight: null,
       maxPlace: 20,
-      isPlaying: false
+      isPlaying: false,
+      placevalueString: ""
     };
   }
 
@@ -53,6 +54,24 @@ class App extends Component {
 
   componentDidMount() {
     window.addEventListener("resize", this.handleResize);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { fn, textWidth, textHeight, place, yOffset } = this.state;
+    const attributes = ["fn", "place", "yOffset", "textWidth", "textHeight"];
+
+    let shouldRecalcPlacevalueString = false;
+    for (let i = 0; i < attributes.length; i++) {
+      const attribute = attributes[i];
+      if (prevState[attribute] !== this.state[attribute]) {
+        shouldRecalcPlacevalueString = true;
+        break;
+      }
+    }
+
+    if (shouldRecalcPlacevalueString) {
+      this.recalcPlacevalueString(fn, textWidth, textHeight, place, yOffset);
+    }
   }
 
   setTextSize = (width, height) => {
@@ -103,6 +122,37 @@ class App extends Component {
     this.interval = null;
   };
 
+  recalcPlacevalueString = (fn, textWidth, textHeight, place, yOffset) => {
+    let worker = new Worker("worker.js");
+
+    const timeout = setTimeout(() => {
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+    }, 2000);
+
+    worker.postMessage([
+      `(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},${place},${yOffset})`
+    ]);
+
+    console.log(
+      `(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},${place},${yOffset})`
+    );
+
+    worker.onmessage = e => {
+      clearTimeout(timeout);
+      console.log(e);
+      this.setState({
+        placevalueString: e.data
+      });
+    };
+
+    worker.onerror = e => {
+      clearTimeout(timeout);
+    };
+  };
+
   render() {
     const {
       fn,
@@ -111,7 +161,8 @@ class App extends Component {
       textHeight,
       textWidth,
       maxPlace,
-      isPlaying
+      isPlaying,
+      placevalueString
     } = this.state;
 
     return (
@@ -121,19 +172,29 @@ class App extends Component {
             innerRef={el => {
               if (el) {
                 const { width, height } = el.getBoundingClientRect();
-                this.setTextSize(width, height);
+                this.setTextSize(
+                  Math.floor(window.innerWidth / width),
+                  Math.floor(window.innerHeight / height)
+                );
+                this.recalcPlacevalueString(fn, width, height, place, yOffset);
               }
             }}
           >
             *
           </Text>
         )}
-        {textHeight && (
-          <Text>{placevalue(fn, this.height, this.width, place, yOffset)}</Text>
-        )}
+        {textHeight && <Text>{placevalueString}</Text>}
         <ControlsContainer>
           <div>
             <p className="input-title">Parameters</p>
+          </div>
+          <div>
+            <label>Function</label>
+            <input
+              type="text"
+              value={fn}
+              onChange={e => this.handleChange("fn", e.target.value)}
+            />
           </div>
           <div>
             <label>Place</label>
