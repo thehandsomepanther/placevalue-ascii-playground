@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import styled from "react-emotion";
 const placevalue = require("placevalue-ascii");
+const Shake = require("shake.js");
 
 const Container = styled("div")`
   overflow: hidden;
@@ -24,23 +25,13 @@ const ControlsContainer = styled("div")`
   border: 1px solid #e9eaeb;
 `;
 
-const WhatContainer = styled("div")`
-  bottom: 20px;
-  right: 20px;
-  position: absolute;
-  padding: 20px;
-  border-radius: 4px;
-  background-color: #fafbfc;
-  border: 1px solid #e9eaeb;
-`;
-
 const TableHeader = styled("p")`
   margin-bottom: 4px;
 `;
 
 const ControlsTable = styled("table")`
   width: 100%;
-  margin-bottom: ${p => p.marginBottom || 0}px;
+  margin-bottom: 20px;
 `;
 
 const TextInput = styled("input")`
@@ -53,6 +44,11 @@ const fns = [
   "x*x*y*y",
   "5 * Math.sqrt(x*x + y*y)"
 ];
+
+const shakeEvent = new Shake({
+  threshold: 15,
+  timeout: 1000
+});
 
 class App extends Component {
   constructor(props) {
@@ -72,10 +68,13 @@ class App extends Component {
       intervalMS: 100,
       shouldHideControlsModal: false
     };
+
+    shakeEvent.start();
   }
 
   componentDidMount() {
     window.addEventListener("resize", this.handleResize);
+    window.addEventListener("shake", this.handleShake);
     document.addEventListener("keydown", this.handleKeyDown);
   }
 
@@ -136,6 +135,11 @@ class App extends Component {
 
   handleResize = () => {
     this.forceUpdate();
+  };
+
+  handleShake = () => {
+    const { shouldHideControlsModal } = this.state;
+    this.setState({ shouldHideControlsModal: !shouldHideControlsModal });
   };
 
   handleKeyDown = e => {
@@ -274,11 +278,13 @@ class App extends Component {
               <div>
                 <TableHeader>Controls</TableHeader>
               </div>
-              <ControlsTable marginBottom={20}>
+              <ControlsTable>
                 <tbody>
                   <tr>
-                    <td>ESC</td>
-                    <td>Hide controls modal</td>
+                    <td>{`ESC${
+                      "ondevicemotion" in window ? "/shake device" : ""
+                    }`}</td>
+                    <td>Toggle controls modal</td>
                   </tr>
                   <tr>
                     <td>c</td>
@@ -403,16 +409,17 @@ class App extends Component {
                 </tbody>
               </ControlsTable>
             </div>
-          </ControlsContainer>
-        )}
-        {!shouldHideControlsModal && (
-          <div>
-            <WhatContainer>
+            <div>
               <a href="https://github.com/mouse-reeve/placevalue_ascii">
                 What is this?
               </a>
-            </WhatContainer>
-          </div>
+            </div>
+            <div>
+              <a href="https://github.com/thehandsomepanther/placevalue-ascii-playground">
+                Github
+              </a>
+            </div>
+          </ControlsContainer>
         )}
       </Container>
     );
