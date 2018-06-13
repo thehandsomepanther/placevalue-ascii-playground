@@ -24,6 +24,29 @@ const ControlsContainer = styled("div")`
   border: 1px solid #e9eaeb;
 `;
 
+const WhatContainer = styled("div")`
+  bottom: 20px;
+  right: 20px;
+  position: absolute;
+  padding: 20px;
+  border-radius: 4px;
+  background-color: #fafbfc;
+  border: 1px solid #e9eaeb;
+`;
+
+const TableHeader = styled("p")`
+  margin-bottom: 4px;
+`;
+
+const ControlsTable = styled("table")`
+  width: 100%;
+  margin-bottom: ${p => p.marginBottom || 0}px;
+`;
+
+const TextInput = styled("input")`
+  border: 2px solid ${p => (p.valid ? "none" : "#FF4136")};
+`;
+
 const fns = [
   "3 * (x**2 - y**2)",
   "x**4 + y**4",
@@ -38,9 +61,10 @@ class App extends Component {
       fn: fns[Math.floor(Math.random() * fns.length)],
       place: 7,
       yOffset: 0,
+      xOffset: 0,
       textWidth: null,
       textHeight: null,
-      maxPlace: 20,
+      maxPlace: 9,
       isPlaying: false,
       placevalueStrings: null,
       didFnError: false,
@@ -115,7 +139,7 @@ class App extends Component {
   };
 
   handleKeyDown = e => {
-    const { place, shouldHideControlsModal } = this.state;
+    const { shouldHideControlsModal } = this.state;
     switch (e.keyCode) {
       // ESC
       case 27:
@@ -133,13 +157,15 @@ class App extends Component {
       case 75:
         this.incrementPlace();
         break;
+      default:
+        break;
     }
   };
 
   makeInterval = () => {
     const { intervalMS } = this.state;
     this.interval = setInterval(() => {
-      const { isPlaying, place, maxPlace } = this.state;
+      const { isPlaying } = this.state;
       if (isPlaying) {
         this.incrementPlace();
       }
@@ -164,7 +190,14 @@ class App extends Component {
   };
 
   recalcPlacevalueStrings = () => {
-    const { fn, textWidth, textHeight, place, yOffset, maxPlace } = this.state;
+    const {
+      fn,
+      textWidth,
+      textHeight,
+      yOffset,
+      xOffset,
+      maxPlace
+    } = this.state;
     let worker = new Worker("worker.js");
 
     const timeout = setTimeout(() => {
@@ -182,19 +215,22 @@ class App extends Component {
     worker.postMessage([
       `${JSON.stringify(
         places
-      )}.map(p=>(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},p,${yOffset}))`
+      )}.map(p=>(${placevalue.toString()})((x,y)=>${fn},${textHeight},${textWidth},p,${yOffset},${xOffset}))`
     ]);
 
     worker.onmessage = e => {
       clearTimeout(timeout);
       this.setState({
-        placevalueStrings: [...e.data]
+        placevalueStrings: [...e.data],
+        didFnError: false
       });
     };
 
     worker.onerror = e => {
       clearTimeout(timeout);
-      this.setState({ didFnError: true });
+      if (e.message.indexOf("SyntaxError") > -1) {
+        this.setState({ didFnError: true });
+      }
     };
   };
 
@@ -203,38 +239,42 @@ class App extends Component {
       fn,
       place,
       yOffset,
+      xOffset,
       textHeight,
       textWidth,
       maxPlace,
-      isPlaying,
       placevalueStrings,
       intervalMS,
-      shouldHideControlsModal
+      shouldHideControlsModal,
+      didFnError
     } = this.state;
 
     return (
       <Container>
-        {!textHeight && (
-          <Text
-            innerRef={el => {
-              if (el) {
-                const { width, height } = el.getBoundingClientRect();
-                this.setTextSize(
-                  Math.floor(window.innerWidth / width),
-                  Math.floor(window.innerHeight / height)
-                );
-              }
-            }}
-          >
-            *
-          </Text>
-        )}
+        {!textHeight &&
+          !textWidth && (
+            <Text
+              innerRef={el => {
+                if (el) {
+                  const { width, height } = el.getBoundingClientRect();
+                  this.setTextSize(
+                    Math.floor(window.innerWidth / width),
+                    Math.floor(window.innerHeight / height)
+                  );
+                }
+              }}
+            >
+              *
+            </Text>
+          )}
         {placevalueStrings && <Text>{placevalueStrings[place] || ""}</Text>}
         {!shouldHideControlsModal && (
           <ControlsContainer>
             <div>
-              <p>Controls</p>
-              <table>
+              <div>
+                <TableHeader>Controls</TableHeader>
+              </div>
+              <ControlsTable marginBottom={20}>
                 <tbody>
                   <tr>
                     <td>ESC</td>
@@ -253,58 +293,126 @@ class App extends Component {
                     <td>Increment place</td>
                   </tr>
                 </tbody>
-              </table>
+              </ControlsTable>
             </div>
             <div>
-              <p>Parameters</p>
-            </div>
-            <div>
-              <label>Function: (x, y) ⇒</label>
-              <input
-                type="text"
-                value={fn}
-                onChange={e => this.handleChange("fn", e.target.value)}
-              />
-              <input
-                type="button"
-                value="Try a random one"
-                onClick={this.handleFnShuffleClick}
-              />
-            </div>
-            <div>
-              <label>Place</label>
-              <input
-                type="text"
-                value={place}
-                onChange={e => this.handleChange("place", e.target.value)}
-              />
-            </div>
-            <div>
-              <label>Max Place</label>
-              <input
-                type="text"
-                value={maxPlace}
-                placeholder={1}
-                onChange={e => this.handleChange("maxPlace", e.target.value)}
-              />
-            </div>
-            <div>
-              <label>Interval (Milliseconds)</label>
-              <input
-                type="text"
-                value={intervalMS}
-                onChange={e => this.handleChange("intervalMS", e.target.value)}
-              />
-            </div>
-            <div>
-              <label>Play</label>
-              <input
-                type="button"
-                value={isPlaying ? "Pause" : "Play"}
-                onClick={this.handlePlayToggle}
-              />
+              <div>
+                <TableHeader>Parameters</TableHeader>
+              </div>
+              <ControlsTable>
+                <tbody>
+                  <tr>
+                    <td>
+                      <label>(x, y) ⇒ </label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={fn}
+                        placeholder="e.g. x + y"
+                        onChange={e => this.handleChange("fn", e.target.value)}
+                        valid={!didFnError}
+                      />
+                      <input
+                        type="button"
+                        value="Random"
+                        onClick={this.handleFnShuffleClick}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label>Place</label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={place}
+                        placeholder="Integer greater than 1"
+                        onChange={e =>
+                          this.handleChange("place", e.target.value)
+                        }
+                        valid={place && place > 0}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label>Max Place</label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={maxPlace}
+                        placeholder="Integer greater than 1"
+                        onChange={e =>
+                          this.handleChange("maxPlace", e.target.value)
+                        }
+                        valid={maxPlace && maxPlace > 0}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label>Y Offset</label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={yOffset}
+                        placeholder="Integer"
+                        onChange={e =>
+                          this.handleChange("yOffset", e.target.value)
+                        }
+                        valid={!Number.isNaN(parseInt(yOffset, 10))}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label>X Offset</label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={xOffset}
+                        placeholder="Integer"
+                        onChange={e =>
+                          this.handleChange("xOffset", e.target.value)
+                        }
+                        valid={!Number.isNaN(parseInt(xOffset, 10))}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label>Interval (MS)</label>
+                    </td>
+                    <td>
+                      <TextInput
+                        type="text"
+                        value={intervalMS}
+                        placeholder="Integer"
+                        onChange={e =>
+                          this.handleChange("intervalMS", e.target.value)
+                        }
+                        valid={intervalMS && intervalMS > 0}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </ControlsTable>
             </div>
           </ControlsContainer>
+        )}
+        {!shouldHideControlsModal && (
+          <div>
+            <WhatContainer>
+              <a href="https://github.com/mouse-reeve/placevalue_ascii">
+                What is this?
+              </a>
+            </WhatContainer>
+          </div>
         )}
       </Container>
     );

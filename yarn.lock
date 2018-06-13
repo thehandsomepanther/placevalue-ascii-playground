@@ -5331,9 +5331,9 @@ pkg-dir@^2.0.0:
   dependencies:
     find-up "^2.1.0"
 
-placevalue-ascii@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/placevalue-ascii/-/placevalue-ascii-1.0.2.tgz#d7e766c5bd530f4ba4d615fbe9869bc953a55331"
+placevalue-ascii@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/placevalue-ascii/-/placevalue-ascii-1.0.4.tgz#25544d5489dd9d815f53492bed0d81e32d1af1eb"
 
 pluralize@^7.0.0:
   version "7.0.0"
