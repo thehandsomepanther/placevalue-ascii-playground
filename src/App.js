@@ -2,10 +2,17 @@ import React, { Component } from "react";
 import styled from "react-emotion";
 const placevalue = require("placevalue-ascii");
 const Shake = require("shake.js");
+const throttle = require("lodash.throttle");
 
 const Container = styled("div")`
   overflow: hidden;
   font-family: monospace;
+  cursor: ${p => (p.grabbing ? "grabbing" : "grab")};
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -o-user-select: none;
 `;
 
 const Text = styled("pre")`
@@ -66,7 +73,11 @@ class App extends Component {
       didFnError: false,
       shouldRecalcPlacevalueStrings: false,
       intervalMS: 100,
-      shouldHideControlsModal: false
+      shouldHideControlsModal: false,
+      dragStartX: null,
+      dragStartY: null,
+      dragStartXOffset: null,
+      dragStartYOffset: null
     };
 
     shakeEvent.start();
@@ -75,6 +86,9 @@ class App extends Component {
   componentDidMount() {
     window.addEventListener("resize", this.handleResize);
     window.addEventListener("shake", this.handleShake);
+    window.addEventListener("mousedown", this.handleMousedown);
+    window.addEventListener("mouseup", this.handleMouseup);
+    window.addEventListener("mousemove", throttle(this.handleMousemove, 50));
     document.addEventListener("keydown", this.handleKeyDown);
   }
 
@@ -140,6 +154,48 @@ class App extends Component {
   handleShake = () => {
     const { shouldHideControlsModal } = this.state;
     this.setState({ shouldHideControlsModal: !shouldHideControlsModal });
+  };
+
+  handleMousedown = e => {
+    const { xOffset, yOffset } = this.state;
+
+    this.setState({
+      dragStartX: e.screenX,
+      dragStartY: e.screenY,
+      dragStartXOffset: xOffset,
+      dragStartYOffset: yOffset
+    });
+  };
+
+  handleMouseup = () => {
+    this.setState({
+      dragStartX: null,
+      dragStartY: null,
+      dragStartXOffset: null,
+      dragStartYOffset: null
+    });
+  };
+
+  handleMousemove = e => {
+    const {
+      dragStartX,
+      dragStartY,
+      dragStartXOffset,
+      dragStartYOffset
+    } = this.state;
+
+    if (!dragStartX && !dragStartY) {
+      return;
+    }
+
+    const mouseX = e.screenX;
+    const mouseY = e.screenY;
+
+    this.setState({
+      xOffset: Math.floor((dragStartX - mouseX) / 5) + dragStartXOffset,
+      yOffset: Math.floor((dragStartY - mouseY) / 5) + dragStartYOffset,
+      shouldRecalcPlacevalueStrings: true
+    });
   };
 
   handleKeyDown = e => {
@@ -250,11 +306,13 @@ class App extends Component {
       placevalueStrings,
       intervalMS,
       shouldHideControlsModal,
-      didFnError
+      didFnError,
+      dragStartX,
+      dragStartY
     } = this.state;
 
     return (
-      <Container>
+      <Container grabbing={dragStartX && dragStartY}>
         {!textHeight &&
           !textWidth && (
             <Text
@@ -297,6 +355,10 @@ class App extends Component {
                   <tr>
                     <td>k</td>
                     <td>Increment place</td>
+                  </tr>
+                  <tr>
+                    <td>Click + drag</td>
+                    <td>Adjust x/y offset</td>
                   </tr>
                 </tbody>
               </ControlsTable>
