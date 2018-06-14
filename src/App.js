@@ -264,6 +264,9 @@ class App extends Component {
       if (worker) {
         worker.terminate();
         worker = null;
+        this.setState({
+          didFnError: true
+        });
       }
     }, 2000);
 
@@ -284,6 +287,8 @@ class App extends Component {
         placevalueStrings: [...e.data],
         didFnError: false
       });
+      worker.terminate();
+      worker = null;
     };
 
     worker.onerror = e => {
@@ -291,6 +296,8 @@ class App extends Component {
       if (e.message.indexOf("SyntaxError") > -1) {
         this.setState({ didFnError: true });
       }
+      worker.terminate();
+      worker = null;
     };
   };
 
