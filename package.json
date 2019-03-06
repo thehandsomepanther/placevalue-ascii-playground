@@ -2,6 +2,7 @@
   "name": "placevalue-ascii-playground",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://thehandsomepanther.github.io/placevalue-ascii-playground/",
   "dependencies": {
     "emotion": "^9.2.1",
     "gh-pages": "^2.0.1",
