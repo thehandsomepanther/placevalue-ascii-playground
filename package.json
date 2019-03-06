@@ -4,24 +4,31 @@
   "private": true,
   "dependencies": {
     "emotion": "^9.2.1",
+    "gh-pages": "^2.0.1",
     "lodash.throttle": "^4.1.1",
     "placevalue-ascii": "^1.0.4",
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
     "react-emotion": "^9.2.1",
-    "react-scripts": "1.1.4",
+    "react-scripts": "^2.1.5",
     "shake.js": "^1.2.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "devDependencies": {
-    "babel-eslint": "^8.2.3",
-    "eslint": "^4.19.1",
     "eslint-config-prettier": "^2.9.0",
     "prettier-eslint": "^8.8.1"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }

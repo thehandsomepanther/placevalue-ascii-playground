@@ -320,22 +320,21 @@ class App extends Component {
 
     return (
       <Container grabbing={dragStartX && dragStartY}>
-        {!textHeight &&
-          !textWidth && (
-            <Text
-              innerRef={el => {
-                if (el) {
-                  const { width, height } = el.getBoundingClientRect();
-                  this.setTextSize(
-                    Math.floor(window.innerWidth / width),
-                    Math.floor(window.innerHeight / height)
-                  );
-                }
-              }}
-            >
-              *
-            </Text>
-          )}
+        {!textHeight && !textWidth && (
+          <Text
+            innerRef={el => {
+              if (el) {
+                const { width, height } = el.getBoundingClientRect();
+                this.setTextSize(
+                  Math.floor(window.innerWidth / width),
+                  Math.floor(window.innerHeight / height)
+                );
+              }
+            }}
+          >
+            *
+          </Text>
+        )}
         {placevalueStrings && <Text>{placevalueStrings[place] || ""}</Text>}
         {!shouldHideControlsModal && (
           <ControlsContainer>
